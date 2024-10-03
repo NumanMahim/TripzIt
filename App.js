@@ -1,101 +1,105 @@
-import React, { useState } from 'react';
-import { Button, Image, StyleSheet, Text, View, ScrollView } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+// Screens for the tabs
+function HomeScreen({ navigation }) {
+  return (
+    <View style={styles.screen}>
+      <Text>Home Screen</Text>
+    </View>
+  );
+}
+
+function SearchScreen({ navigation }) {
+  return (
+    <View style={styles.screen}>
+      <Text>Search Screen</Text>
+    </View>
+  );
+}
+
+function CameraScreen({ navigation }) {
+  return (
+    <View style={styles.screen}>
+      <Text>Camera Screen</Text>
+    </View>
+  );
+}
+
+function MapScreen({ navigation }) {
+  return (
+    <View style={styles.screen}>
+      <Text>Map Screen</Text>
+    </View>
+  );
+}
+
+function ProfileScreen({ navigation }) {
+  return (
+    <View style={styles.screen}>
+      <Text>User Profile</Text>
+    </View>
+  );
+}
+
+// Create bottom tab navigator
+const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [image, setImage] = useState(null);
-  const [locationName, setLocationName] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-
-  // Function to pick an image from the gallery
-  const pickImage = async () => {
-    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      alert('Permission to access gallery is required!');
-      return;
-    }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.cancelled) {
-      setImage(result.uri);
-      getLocation();
-    }
-  };
-
-  // Function to get the current location and reverse-geocode it
-  const getLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setErrorMsg('Permission to access location was denied');
-      return;
-    }
-
-    try {
-      let location = await Location.getCurrentPositionAsync({});
-      let reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      if (reverseGeocode.length > 0) {
-        const locationInfo = reverseGeocode[0];
-        const broadLocation = `${locationInfo.city}, ${locationInfo.region}`;
-        setLocationName(broadLocation);
-      }
-    } catch (error) {
-      setErrorMsg('Unable to fetch location');
-      console.error(error);
-    }
-  };
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Button title="Pick an Image" onPress={pickImage} />
-      {image && <Image source={{ uri: image }} style={styles.image} />}
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route, navigation }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
 
-      {locationName && (
-        <Text style={styles.text}>Location: {locationName}</Text>
-      )}
+            if (route.name === 'Home') {
+              iconName = 'home-outline';
+            } else if (route.name === 'Search') {
+              iconName = 'search-outline';
+            } else if (route.name === 'Camera') {
+              iconName = 'camera-outline';
+            } else if (route.name === 'Map') {
+              iconName = 'map-outline';
+            } else if (route.name === 'Profile') {
+              iconName = 'person-outline';
+            }
 
-      {errorMsg && (
-        <Text style={styles.error}>Error: {errorMsg}</Text>
-      )}
-
-      {!locationName && !errorMsg && image && (
-        <Text style={styles.text}>Fetching location...</Text>
-      )}
-    </ScrollView>
+            // Return the appropriate icon
+            return <Icon name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: 'black',
+          tabBarInactiveTintColor: 'gray',
+          // Add a texting button (chat icon) in the top-right corner of the header
+          headerRight: () => (
+            <TouchableOpacity onPress={() => alert('Texting button pressed')}>
+              <Icon
+                name="chatbubble-outline" // Chat bubble icon
+                size={25}
+                color="black"
+                style={{ marginRight: 15 }}
+              />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Search" component={SearchScreen} />
+        <Tab.Screen name="Camera" component={CameraScreen} />
+        <Tab.Screen name="Map" component={MapScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  screen: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginTop: 20,
-  },
-  text: {
-    marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  error: {
-    marginTop: 20,
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
   },
 });

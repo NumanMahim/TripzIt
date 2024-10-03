@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Tripzit",
-    "slug": "Tripzit",
+    "name": "Tripz it",
+    "slug": "tripz-it",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,6 +22,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4a6380f5-713f-4d0a-af04-f74ed4bf6316"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4a6380f5-713f-4d0a-af04-f74ed4bf6316"
     }
   }
 }
