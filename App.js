@@ -1,79 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActionSheetIOS, Alert } from 'react-native';
+import React from 'react';
+import { ActionSheetIOS } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
 
-// Home Screen where the image and location will be displayed
-function HomeScreen({ route }) {
-  const { imageUri, location } = route.params || {}; // Retrieve the image URI and location from route params
-  const [imageLocation, setImageLocation] = useState(null); // Manage the location state
+// Import screens from features
+import HomeScreen from './features/Home/HomeScreen';
+import SearchScreen from './features/Search/SearchScreen';
+import MapScreen from './features/Map/MapScreen';
+import ProfileScreen from './features/User/ProfileScreen';
 
-  useEffect(() => {
-    if (location) {
-      setImageLocation(location); // Set location if available
-    }
-  }, [location]);
-
-  return (
-    <View style={styles.screen}>
-      <Text>Home Screen</Text>
-      {imageUri ? (
-        <>
-          <Image source={{ uri: imageUri }} style={styles.image} />
-          {imageLocation ? (
-            <Text style={styles.locationText}>
-              Location: {imageLocation.city}, {imageLocation.region}
-            </Text>
-          ) : (
-            <Text style={styles.locationText}>No location available</Text>
-          )}
-        </>
-      ) : (
-        <Text>No image selected</Text>
-      )}
-    </View>
-  );
-}
-
-// Search Screen
-function SearchScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text>Search Screen</Text>
-    </View>
-  );
-}
-
-// Map Screen
-function MapScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text>Map Screen</Text>
-    </View>
-  );
-}
-
-// Profile Screen
-function ProfileScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text>User Profile</Text>
-    </View>
-  );
-}
-
-// Function to extract location from the image EXIF data directly from ImagePicker
-const extractLocationFromImage = async (image, navigation) => {
+// Function to extract location from the image EXIF data using URI
+const extractLocationFromImage = async (imageUri, navigation) => {
   try {
-    const { exif } = image;
-    if (exif && exif.GPSLatitude && exif.GPSLongitude) {
-      const latitude = exif.GPSLatitude;
-      const longitude = exif.GPSLongitude;
+    // Extract EXIF data from image URI using FileSystem
+    const exifData = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-      // Reverse geocode the GPS coordinates
+    const exif = JSON.parse(exifData).exif;
+    
+    if (exif && exif.GPSLatitude && exif.GPSLongitude) {
+      const { latitude, longitude } = {
+        latitude: exif.GPSLatitude,
+        longitude: exif.GPSLongitude,
+      };
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
@@ -81,17 +35,17 @@ const extractLocationFromImage = async (image, navigation) => {
 
       if (reverseGeocode.length > 0) {
         const location = reverseGeocode[0];
-        navigation.navigate('Home', { imageUri: image.uri, location });
+        navigation.navigate('Home', { imageUri, location });
       } else {
-        navigation.navigate('Home', { imageUri: image.uri, location: null });
+        navigation.navigate('Home', { imageUri, location: null });
       }
     } else {
-      navigation.navigate('Home', { imageUri: image.uri, location: null });
+      navigation.navigate('Home', { imageUri, location: null });
     }
   } catch (error) {
     console.error('Error extracting location:', error);
-    Alert.alert('Error', 'Error extracting location from image.');
-    navigation.navigate('Home', { imageUri: image.uri, location: null });
+    Alert.alert("Error", "Error extracting location from image.");
+    navigation.navigate('Home', { imageUri, location: null });
   }
 };
 
@@ -129,7 +83,7 @@ export default function App() {
     });
 
     if (!result.cancelled) {
-      extractLocationFromImage(result, navigation);
+      extractLocationFromImage(result.uri, navigation);
     }
   };
 
@@ -147,7 +101,7 @@ export default function App() {
     });
 
     if (!result.cancelled) {
-      extractLocationFromImage(result, navigation);
+      extractLocationFromImage(result.uri, navigation);
     }
   };
 
@@ -180,11 +134,11 @@ export default function App() {
         <Tab.Screen name="Search" component={SearchScreen} />
         <Tab.Screen
           name="Camera"
-          component={HomeScreen} // Keep a placeholder screen for Camera tab
+          component={HomeScreen} // Placeholder for Camera tab
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               e.preventDefault();
-              showActionSheet(navigation); // Show ActionSheet with options to upload or take photo
+              showActionSheet(navigation); // Show ActionSheet with options
             },
           })}
         />
@@ -194,21 +148,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: 300,
-    height: 300,
-    marginTop: 20,
-  },
-  locationText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333',
-  },
-});
